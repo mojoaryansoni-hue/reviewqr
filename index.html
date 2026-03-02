@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ReviewQR — Share Your Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --navy: #0D1B3E;
+    --navymid: #1A2F5E;
+    --blue: #1E4D8C;
+    --gold: #C9973A;
+    --goldlt: #F0C060;
+    --green: #16A34A;
+    --white: #ffffff;
+    --offwhite: #F8FAFC;
+    --gray: #64748b;
+    --graylt: #e2e8f0;
+    --slate: #334155;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--navy);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--slate);
+  }
+
+  /* ── App container ── */
+  .app {
+    height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    background: var(--white);
+  }
+
+  /* ── Screens ── */
+  .screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .screen.active {
+    transform: translateX(0);
+  }
+
+  .screen.exit-left {
+    transform: translateX(-100%);
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap {
+    height: 4px;
+    background: var(--graylt);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--navy), var(--gold));
+    border-radius: 0 100px 100px 0;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Screen 1: Welcome ── */
+  #s1 {
+    background: linear-gradient(160deg, #0D1B3E 0%, #1A2F5E 45%, #0D7377 100%);
+    transform: translateX(0);
+    justify-content: space-between;
+    padding: 0;
+  }
+
+  .welcome-top {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px 40px;
+    text-align: center;
+  }
+
+  .brand-logo {
+    width: 72px; height: 72px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 22px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin-bottom: 32px;
+    backdrop-filter: blur(12px);
+  }
+
+  .welcome-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin-bottom: 14px;
+  }
+
+  .welcome-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.65;
+    max-width: 280px;
+  }
+
+  .welcome-bottom {
+    padding: 24px 28px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .time-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    background: rgba(201,151,58,0.18);
+    border: 1.5px solid rgba(201,151,58,0.45);
+    color: var(--goldlt);
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    width: 100%;
+    padding: 18px 24px;
+    background: var(--gold);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.02em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 8px 24px rgba(201,151,58,0.4);
+    -webkit-appearance: none;
+  }
+
+  .btn-primary:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(201,151,58,0.3); }
+
+  .btn-navy {
+    width: 100%;
+    padding: 18px 24px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform 0.15s;
+    -webkit-appearance: none;
+  }
+  .btn-navy:active { transform: scale(0.97); }
+
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  /* ── Question screens ── */
+  .q-header {
+    padding: 20px 24px 0;
+    background: var(--white);
+  }
+
+  .q-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .q-step-tag {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(201,151,58,0.1);
+    padding: 5px 11px;
+    border-radius: 100px;
+  }
+
+  .q-back {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--offwhite);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--slate);
+    transition: background 0.15s;
+  }
+  .q-back:active { background: var(--graylt); }
+
+  .q-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1.3;
+    letter-spacing: -0.3px;
+    padding: 0 24px 24px;
+  }
+
+  .q-body { padding: 0 24px; flex: 1; }
+  .q-footer { padding: 20px 24px 40px; }
+
+  /* ── Stars ── */
+  .stars-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 0 12px;
+  }
+
+  .star-btn {
+    width: 54px; height: 54px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    transition: transform 0.15s;
+  }
+  .star-btn:active { transform: scale(1.25); }
+
+  .star-svg { width: 100%; height: 100%; transition: fill 0.15s; }
+  .star-svg.empty { fill: #e2e8f0; }
+  .star-svg.filled { fill: #F0C060; }
+
+  .star-feedback {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold);
+    min-height: 24px;
+    padding: 8px 0 24px;
+    transition: opacity 0.2s;
+  }
+
+  /* ── Chips ── */
+  .chips-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+
+  .chip-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 18px;
+    border: 2px solid var(--graylt);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    background: #fff;
+    -webkit-appearance: none;
+    user-select: none;
+  }
+
+  .chip-item.selected {
+    border-color: var(--navy);
+    background: #EEF3FF;
+    transform: scale(1.01);
+  }
+
+  .chip-item:active { transform: scale(0.98); }
+
+  .chip-box {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 13px;
+    color: transparent;
+    font-weight: 800;
+  }
+
+  .chip-item.selected .chip-box {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: white;
+  }
+
+  .chip-emoji { font-size: 22px; line-height: 1; }
+  .chip-label { font-size: 15px; font-weight: 600; color: var(--navy); }
+
+  /* ── Textarea ── */
+  .text-input {
+    width: 100%;
+    min-height: 150px;
+    padding: 16px;
+    border: 2px solid var(--graylt);
+    border-radius: 16px;
+    font-size: 15px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--navy);
+    resize: none;
+    outline: none;
+    background: var(--offwhite);
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-appearance: none;
+    line-height: 1.6;
+  }
+  .text-input:focus { border-color: var(--navy); background: #fff; }
+  .text-input::placeholder { color: #94a3b8; }
+
+  .optional-note {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ── Generating screen ── */
+  #s5 {
+    background: var(--offwhite);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 32px;
+    transform: translateX(100%);
+  }
+
+  .spinner-ring {
+    width: 72px; height: 72px;
+    border: 4px solid var(--graylt);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 28px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .gen-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 10px;
+  }
+
+  .gen-sub {
+    font-size: 14px;
+    color: var(--gray);
+    line-height: 1.6;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+
+  .gen-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+    margin: 32px auto 0;
+  }
+
+  .gen-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid var(--graylt);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray);
+    opacity: 0.4;
+    transition: opacity 0.4s, border-color 0.4s;
+  }
+
+  .gen-step.done {
+    opacity: 1;
+    border-color: var(--green);
+    color: var(--navy);
+  }
+
+  .gen-step-icon { font-size: 18px; }
+
+  /* ── Thank you screen ── */
+  #s6 {
+    background: linear-gradient(160deg, #0D1B3E 0%, #1A2F5E 100%);
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+    transform: translateX(100%);
+  }
+
+  .ty-top {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px 32px;
+    text-align: center;
+  }
+
+  .check-anim {
+    width: 88px; height: 88px;
+    background: rgba(22,163,74,0.15);
+    border: 3px solid var(--green);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px;
+    margin-bottom: 28px;
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.3); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .ty-title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 10px; letter-spacing: -0.4px; }
+  .ty-sub { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.65; max-width: 280px; }
+
+  .review-preview {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    text-align: left;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .review-preview-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--goldlt);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .review-preview-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .ty-bottom {
+    padding: 20px 28px 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .clipboard-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(201,151,58,0.15);
+    border: 1.5px solid rgba(201,151,58,0.35);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--goldlt);
+  }
+
+  /* ── Bottom brand tag ── */
+  .brand-tag {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+  }
+
+  .brand-tag-light {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 0 8px;
+    border-top: 1px solid var(--graylt);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ SCREEN 1: WELCOME ══ -->
+  <div class="screen" id="s1">
+    <div class="welcome-top">
+      <div class="brand-logo">⭐</div>
+      <div class="welcome-title">How was your experience today?</div>
+      <div class="welcome-sub">Your review helps this business grow and helps other customers like you.</div>
+    </div>
+    <div class="welcome-bottom">
+      <div class="time-pill">⚡ Takes less than 30 seconds</div>
+      <button class="btn-primary" onclick="goTo('s2')">Start My Review <span>→</span></button>
+      <div class="brand-tag">Powered by ReviewQR</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 2: STAR RATING ══ -->
+  <div class="screen" id="s2">
+    <div class="progress-wrap"><div class="progress-fill" style="width:33%"></div></div>
+    <div class="q-header">
+      <div class="q-meta">
+        <button class="q-back" onclick="goBack('s1')">←</button>
+        <div class="q-step-tag">Step 1 of 3</div>
+      </div>
+    </div>
+    <div class="q-title">How would you rate your overall experience?</div>
+    <div class="q-body">
+      <div class="stars-container" id="starsRow">
+        <button class="star-btn" onclick="setStar(1)"><svg class="star-svg empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+        <button class="star-btn" onclick="setStar(2)"><svg class="star-svg empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+        <button class="star-btn" onclick="setStar(3)"><svg class="star-svg empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+        <button class="star-btn" onclick="setStar(4)"><svg class="star-svg empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+        <button class="star-btn" onclick="setStar(5)"><svg class="star-svg empty" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></button>
+      </div>
+      <div class="star-feedback" id="starFeedback">Tap a star to rate</div>
+    </div>
+    <div class="q-footer">
+      <button class="btn-primary" id="btnS2" onclick="goTo('s3')" disabled>Continue →</button>
+      <div class="brand-tag-light">ReviewQR</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3: WHAT DID YOU ENJOY ══ -->
+  <div class="screen" id="s3">
+    <div class="progress-wrap"><div class="progress-fill" style="width:66%"></div></div>
+    <div class="q-header">
+      <div class="q-meta">
+        <button class="q-back" onclick="goBack('s2')">←</button>
+        <div class="q-step-tag">Step 2 of 3</div>
+      </div>
+    </div>
+    <div class="q-title">What did you enjoy most?</div>
+    <div class="q-body">
+      <div class="chips-list">
+        <div class="chip-item" onclick="toggleChip(this,'Food Quality')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">🍽️</span>
+          <span class="chip-label">Food Quality</span>
+        </div>
+        <div class="chip-item" onclick="toggleChip(this,'Service')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">🤝</span>
+          <span class="chip-label">Service</span>
+        </div>
+        <div class="chip-item" onclick="toggleChip(this,'Ambience')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">✨</span>
+          <span class="chip-label">Ambience</span>
+        </div>
+        <div class="chip-item" onclick="toggleChip(this,'Value for Money')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">💰</span>
+          <span class="chip-label">Value for Money</span>
+        </div>
+        <div class="chip-item" onclick="toggleChip(this,'Staff Behaviour')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">😊</span>
+          <span class="chip-label">Staff Behaviour</span>
+        </div>
+        <div class="chip-item" onclick="toggleChip(this,'Cleanliness')">
+          <div class="chip-box">✓</div>
+          <span class="chip-emoji">🧹</span>
+          <span class="chip-label">Cleanliness</span>
+        </div>
+      </div>
+    </div>
+    <div class="q-footer">
+      <button class="btn-primary" id="btnS3" onclick="goTo('s4')" disabled>Continue →</button>
+      <div class="brand-tag-light">ReviewQR</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4: OPTIONAL TEXT ══ -->
+  <div class="screen" id="s4">
+    <div class="progress-wrap"><div class="progress-fill" style="width:90%"></div></div>
+    <div class="q-header">
+      <div class="q-meta">
+        <button class="q-back" onclick="goBack('s3')">←</button>
+        <div class="q-step-tag">Step 3 of 3</div>
+      </div>
+    </div>
+    <div class="q-title">Any specific highlight you'd like to mention?</div>
+    <div class="q-body">
+      <textarea class="text-input" id="highlight" placeholder="e.g. The paneer was amazing, staff was very helpful..."></textarea>
+      <div class="optional-note">✨ This step is optional — feel free to skip it</div>
+    </div>
+    <div class="q-footer">
+      <button class="btn-primary" onclick="submitForm()">Submit My Review →</button>
+      <div class="brand-tag-light">ReviewQR</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 5: GENERATING ══ -->
+  <div class="screen" id="s5">
+    <div class="spinner-ring"></div>
+    <div class="gen-title">Creating your review...</div>
+    <div class="gen-sub">Our AI is personalizing a review based on your experience</div>
+    <div class="gen-steps">
+      <div class="gen-step" id="gs1"><span class="gen-step-icon">📝</span> Reading your responses</div>
+      <div class="gen-step" id="gs2"><span class="gen-step-icon">🤖</span> AI generating review draft</div>
+      <div class="gen-step" id="gs3"><span class="gen-step-icon">✅</span> Review ready to post</div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 6: THANK YOU ══ -->
+  <div class="screen" id="s6">
+    <div class="ty-top">
+      <div class="check-anim" id="checkAnim">✓</div>
+      <div class="ty-title">Your review is ready! 🎉</div>
+      <div class="ty-sub">Tap the button below to open Google. Your review is copied — just paste and submit!</div>
+      <div class="review-preview" id="reviewPreview">
+        <div class="review-preview-label">Your Review</div>
+        <div class="review-preview-text" id="reviewText">Generating...</div>
+      </div>
+    </div>
+    <div class="ty-bottom">
+      <div class="clipboard-notice">
+        <span>📋</span>
+        <span>Review copied to clipboard — just paste on Google!</span>
+      </div>
+      <button class="btn-primary" id="googleBtn" onclick="openGoogle()">⭐ Post to Google Now</button>
+      <div class="brand-tag">Powered by ReviewQR</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ──
+  const state = {
+    businessId: new URLSearchParams(window.location.search).get('b') || 'demo',
+    businessName: new URLSearchParams(window.location.search).get('name') || 'this business',
+    googleUrl: decodeURIComponent(new URLSearchParams(window.location.search).get('g') || 'https://search.google.com/local/writereview'),
+    webhookUrl: new URLSearchParams(window.location.search).get('w') || '',
+    rating: 0,
+    chips: [],
+    highlight: '',
+    generatedReview: '',
+    currentScreen: 's1',
+  };
+
+  const starLabels = ['', 'Poor 😕', 'Below Average 😐', 'Good 🙂', 'Very Good 😊', 'Excellent! 🤩'];
+
+  // ── Navigation ──
+  function goTo(id) {
+    const curr = document.getElementById(state.currentScreen);
+    const next = document.getElementById(id);
+    curr.classList.add('exit-left');
+    curr.classList.remove('active');
+    next.classList.add('active');
+    next.classList.remove('exit-left');
+    state.currentScreen = id;
+    next.scrollTop = 0;
+  }
+
+  function goBack(id) {
+    const curr = document.getElementById(state.currentScreen);
+    const prev = document.getElementById(id);
+    curr.classList.remove('active');
+    curr.style.transform = 'translateX(100%)';
+    setTimeout(() => { curr.style.transform = ''; }, 400);
+    prev.classList.remove('exit-left');
+    prev.classList.add('active');
+    state.currentScreen = id;
+  }
+
+  // ── Stars ──
+  function setStar(n) {
+    state.rating = n;
+    document.querySelectorAll('.star-svg').forEach((s, i) => {
+      s.classList.toggle('filled', i < n);
+      s.classList.toggle('empty', i >= n);
+    });
+    document.getElementById('starFeedback').textContent = starLabels[n];
+    document.getElementById('btnS2').disabled = false;
+  }
+
+  // ── Chips ──
+  function toggleChip(el, label) {
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) {
+      state.chips.push(label);
+    } else {
+      state.chips = state.chips.filter(c => c !== label);
+    }
+    document.getElementById('btnS3').disabled = state.chips.length === 0;
+  }
+
+  // ── Submit & Generate ──
+  async function submitForm() {
+    state.highlight = document.getElementById('highlight').value.trim();
+    goTo('s5');
+
+    // Animate generation steps
+    await delay(800);
+    document.getElementById('gs1').classList.add('done');
+    await delay(1000);
+    document.getElementById('gs2').classList.add('done');
+
+    // Generate review via webhook or fallback
+    const review = await generateReview();
+    state.generatedReview = review;
+
+    await delay(700);
+    document.getElementById('gs3').classList.add('done');
+    await delay(600);
+
+    // Copy to clipboard
+    try { await navigator.clipboard.writeText(review); } catch(e) {}
+
+    // Show thank you
+    document.getElementById('reviewText').textContent = review;
+    goTo('s6');
+
+    // Trigger check animation
+    setTimeout(() => {
+      document.getElementById('checkAnim').style.animationPlayState = 'running';
+    }, 100);
+  }
+
+  async function generateReview() {
+    // If webhook is configured, use it
+    if (state.webhookUrl) {
+      try {
+        const res = await fetch(state.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: state.businessId,
+            businessName: state.businessName,
+            rating: state.rating,
+            chips: state.chips,
+            highlight: state.highlight,
+          })
+        });
+        const data = await res.json();
+        if (data.review) return data.review;
+      } catch(e) {}
+    }
+
+    // Fallback: generate locally based on inputs
+    return buildLocalReview();
+  }
+
+  function buildLocalReview() {
+    const name = state.businessName;
+    const r = state.rating;
+    const chips = state.chips;
+    const hl = state.highlight;
+
+    const openers = {
+      5: [`Absolutely loved my experience at ${name}!`, `Had an amazing visit to ${name}!`, `${name} completely exceeded my expectations!`],
+      4: [`Really enjoyed my time at ${name}.`, `Great experience overall at ${name}!`, `Had a wonderful visit to ${name}.`],
+      3: [`Decent experience at ${name}.`, `My visit to ${name} was quite good.`, `Overall a pleasant experience at ${name}.`],
+      2: [`My visit to ${name} was okay.`, `Had an average experience at ${name}.`],
+      1: [`My experience at ${name} was disappointing.`, `Unfortunately my visit to ${name} didn't meet expectations.`],
+    };
+
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    let review = pick(openers[r] || openers[3]) + ' ';
+
+    if (chips.length > 0) {
+      const chipText = chips.length === 1 ? chips[0].toLowerCase() :
+        chips.slice(0,-1).map(c=>c.toLowerCase()).join(', ') + ' and ' + chips[chips.length-1].toLowerCase();
+      review += `The ${chipText} was ${r >= 4 ? 'outstanding' : 'good'}. `;
+    }
+
+    if (hl) {
+      review += hl + ' ';
+    }
+
+    const closers = r >= 4
+      ? ['Will definitely be coming back soon!', 'Highly recommend to everyone!', 'Would visit again without a doubt!']
+      : ['Worth a visit.', 'Would recommend giving it a try.'];
+
+    review += pick(closers);
+    return review;
+  }
+
+  function openGoogle() {
+    window.open(state.googleUrl, '_blank');
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
