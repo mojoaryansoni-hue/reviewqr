@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReviewQR — Mobile Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0f172a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 40px 20px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .page-label {
+    color: #64748b;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #ffffff;
+    border-radius: 48px;
+    border: 10px solid #1e293b;
+    box-shadow:
+      0 0 0 2px #334155,
+      0 40px 80px rgba(0,0,0,0.6),
+      inset 0 2px 4px rgba(255,255,255,0.1);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Notch */
+  .notch {
+    width: 120px;
+    height: 28px;
+    background: #1e293b;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 24px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .status-bar .time { font-size: 14px; font-weight: 800; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .signal-bar { width: 3px; background: #1e293b; border-radius: 1px; }
+
+  /* Form screen */
+  .screen {
+    display: none;
+    flex-direction: column;
+    min-height: 730px;
+    background: #ffffff;
+  }
+  .screen.active { display: flex; }
+
+  /* ── SCREEN 1: Welcome ── */
+  .welcome-screen {
+    background: linear-gradient(160deg, #0D1B3E 0%, #1E4D8C 60%, #0D7377 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    text-align: center;
+    min-height: 730px;
+  }
+
+  .welcome-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 28px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .welcome-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    margin-bottom: 14px;
+    letter-spacing: -0.5px;
+  }
+
+  .welcome-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+    margin-bottom: 40px;
+    font-weight: 400;
+  }
+
+  .time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(201,151,58,0.25);
+    border: 1px solid rgba(201,151,58,0.5);
+    color: #F0C060;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 32px;
+  }
+
+  .start-btn {
+    width: 100%;
+    padding: 18px;
+    background: #C9973A;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    box-shadow: 0 8px 24px rgba(201,151,58,0.4);
+  }
+
+  .start-btn:active { transform: scale(0.97); }
+
+  /* ── SCREEN 2: Star Rating ── */
+  .question-screen {
+    padding: 28px 24px;
+    flex-direction: column;
+  }
+
+  .progress-bar-wrap {
+    height: 4px;
+    background: #f1f5f9;
+    border-radius: 100px;
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0D1B3E, #C9973A);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+
+  .q-step { font-size: 12px; font-weight: 700; color: #C9973A; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+  .q-title { font-size: 22px; font-weight: 800; color: #0D1B3E; line-height: 1.3; margin-bottom: 32px; letter-spacing: -0.3px; }
+
+  /* Stars */
+  .stars-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .star {
+    width: 52px;
+    height: 52px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .star:active { transform: scale(1.2); }
+  .star svg { width: 100%; height: 100%; }
+  .star.filled svg path { fill: #F0C060; }
+  .star.empty svg path { fill: #e2e8f0; }
+
+  .star-label {
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 40px;
+    font-weight: 500;
+    min-height: 20px;
+    transition: color 0.2s;
+  }
+
+  /* ── SCREEN 3: Multiple Choice ── */
+  .chips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #ffffff;
+  }
+
+  .chip.selected {
+    border-color: #0D1B3E;
+    background: #f0f4ff;
+  }
+
+  .chip-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .chip.selected .chip-check {
+    background: #0D1B3E;
+    border-color: #0D1B3E;
+  }
+
+  .chip.selected .chip-check::after {
+    content: '✓';
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .chip-icon { font-size: 20px; }
+  .chip-text { font-size: 15px; font-weight: 600; color: #1e293b; }
+
+  /* ── SCREEN 4: Text input ── */
+  .text-area {
+    width: 100%;
+    min-height: 140px;
+    padding: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    font-size: 15px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1e293b;
+    resize: none;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+    background: #fafafa;
+  }
+  .text-area:focus { border-color: #0D1B3E; background: #fff; }
+  .optional-badge {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+    margin-bottom: 32px;
+  }
+
+  /* ── SCREEN 5: Thank You ── */
+  .thankyou-screen {
+    background: linear-gradient(160deg, #0D1B3E 0%, #1A2F5E 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    text-align: center;
+    min-height: 730px;
+  }
+
+  .check-circle {
+    width: 90px;
+    height: 90px;
+    background: rgba(22,163,74,0.2);
+    border: 3px solid #16A34A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 28px;
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .ty-title { font-size: 28px; font-weight: 800; color: #ffffff; margin-bottom: 12px; }
+  .ty-sub { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 32px; }
+
+  .redirect-notice {
+    background: rgba(201,151,58,0.15);
+    border: 1px solid rgba(201,151,58,0.4);
+    border-radius: 14px;
+    padding: 16px 20px;
+    color: #F0C060;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* Nav button */
+  .nav-btn {
+    width: 100%;
+    padding: 17px;
+    background: #0D1B3E;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+  .nav-btn:active { transform: scale(0.98); }
+  .nav-btn.gold { background: #C9973A; box-shadow: 0 6px 20px rgba(201,151,58,0.35); }
+
+  /* Bottom navigation dots */
+  .bottom-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px 0 12px;
+    margin-top: auto;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 100px; background: #e2e8f0; transition: all 0.3s; }
+  .dot.active { width: 24px; background: #0D1B3E; }
+
+  /* Device label below */
+  .device-label {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .device-label span {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .screen-dots { display: flex; gap: 6px; }
+  .screen-dot {
+    width: 28px; height: 5px; border-radius: 100px;
+    background: #1e293b; cursor: pointer; transition: background 0.2s;
+  }
+  .screen-dot.active { background: #C9973A; }
+
+  .branding {
+    color: #1e3a5f;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 0 6px;
+    text-align: center;
+    border-top: 1px solid #f1f5f9;
+    margin-top: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-label">📱 Customer Mobile Experience — ReviewQR</div>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="status-icons">
+      <div style="display:flex;gap:2px;align-items:flex-end">
+        <div class="signal-bar" style="height:4px"></div>
+        <div class="signal-bar" style="height:7px"></div>
+        <div class="signal-bar" style="height:10px"></div>
+        <div class="signal-bar" style="height:13px"></div>
+      </div>
+      <span style="font-size:12px">WiFi</span>
+      <span style="font-size:12px">🔋</span>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: Welcome -->
+  <div class="screen welcome-screen active" id="screen1">
+    <div class="welcome-icon">⭐</div>
+    <div class="welcome-title">How was your experience today?</div>
+    <div class="welcome-sub">Your review helps this business grow and helps other customers make better decisions.</div>
+    <div class="time-badge">⚡ Takes less than 30 seconds</div>
+    <button class="start-btn" onclick="goTo(2)">Start My Review →</button>
+  </div>
+
+  <!-- SCREEN 2: Star Rating -->
+  <div class="screen question-screen" id="screen2">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:33%"></div></div>
+    <div class="q-step">Step 1 of 3</div>
+    <div class="q-title">How would you rate your overall experience?</div>
+
+    <div class="stars-row" id="starsRow">
+      <div class="star empty" onclick="rateStar(1)"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <div class="star empty" onclick="rateStar(2)"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <div class="star empty" onclick="rateStar(3)"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <div class="star empty" onclick="rateStar(4)"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <div class="star empty" onclick="rateStar(5)"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+    </div>
+    <div class="star-label" id="starLabel">Tap a star to rate</div>
+
+    <button class="nav-btn gold" onclick="goTo(3)" style="margin-top:auto">Continue →</button>
+    <div class="bottom-nav">
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="branding">ReviewQR</div>
+  </div>
+
+  <!-- SCREEN 3: Multiple Choice -->
+  <div class="screen question-screen" id="screen3">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:66%"></div></div>
+    <div class="q-step">Step 2 of 3</div>
+    <div class="q-title">What did you enjoy most?</div>
+
+    <div class="chips-grid">
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">🍽️</span>
+        <span class="chip-text">Food Quality</span>
+      </div>
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">🤝</span>
+        <span class="chip-text">Service</span>
+      </div>
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">✨</span>
+        <span class="chip-text">Ambience</span>
+      </div>
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">💰</span>
+        <span class="chip-text">Value for Money</span>
+      </div>
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">😊</span>
+        <span class="chip-text">Staff Behaviour</span>
+      </div>
+      <div class="chip" onclick="toggleChip(this)">
+        <div class="chip-check"></div>
+        <span class="chip-icon">🧹</span>
+        <span class="chip-text">Cleanliness</span>
+      </div>
+    </div>
+
+    <button class="nav-btn gold" onclick="goTo(4)">Continue →</button>
+    <div class="bottom-nav">
+      <div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+    </div>
+    <div class="branding">ReviewQR</div>
+  </div>
+
+  <!-- SCREEN 4: Optional Text -->
+  <div class="screen question-screen" id="screen4">
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:90%"></div></div>
+    <div class="q-step">Step 3 of 3</div>
+    <div class="q-title">Any specific highlight you'd like to mention?</div>
+
+    <textarea class="text-area" placeholder="e.g. The paneer was amazing, staff was very helpful..."></textarea>
+    <div class="optional-badge">✨ This is optional — feel free to skip</div>
+
+    <button class="nav-btn gold" onclick="goTo(5)" style="margin-top:auto">Submit My Review →</button>
+    <div class="bottom-nav">
+      <div class="dot"></div><div class="dot"></div><div class="dot active"></div>
+    </div>
+    <div class="branding">ReviewQR</div>
+  </div>
+
+  <!-- SCREEN 5: Thank You -->
+  <div class="screen thankyou-screen" id="screen5">
+    <div class="check-circle">✓</div>
+    <div class="ty-title">Thank you! 🎉</div>
+    <div class="ty-sub">Your personalized review has been created. Tap below to post it directly to Google — it takes just 5 seconds.</div>
+    <div class="redirect-notice">
+      <span>📋</span>
+      <span>Your review is copied to clipboard — just paste it on Google!</span>
+    </div>
+    <br>
+    <button class="nav-btn gold" onclick="goTo(1)">⭐ Post to Google Now</button>
+  </div>
+
+</div>
+
+<!-- Screen navigation dots below phone -->
+<div class="device-label">
+  <span>Tap to preview each screen</span>
+  <div class="screen-dots">
+    <div class="screen-dot active" onclick="goTo(1)" title="Welcome"></div>
+    <div class="screen-dot" onclick="goTo(2)" title="Star Rating"></div>
+    <div class="screen-dot" onclick="goTo(3)" title="Chips"></div>
+    <div class="screen-dot" onclick="goTo(4)" title="Text"></div>
+    <div class="screen-dot" onclick="goTo(5)" title="Thank You"></div>
+  </div>
+</div>
+
+<script>
+  const starLabels = ['', 'Poor 😕', 'Below Average 😐', 'Good 🙂', 'Very Good 😊', 'Excellent! 🤩'];
+
+  function goTo(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen' + n).classList.add('active');
+    document.querySelectorAll('.screen-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === n - 1);
+    });
+    document.querySelector('.phone').scrollTop = 0;
+  }
+
+  function rateStar(n) {
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.classList.toggle('filled', i < n);
+      s.classList.toggle('empty', i >= n);
+    });
+    document.getElementById('starLabel').textContent = starLabels[n];
+    document.getElementById('starLabel').style.color = '#C9973A';
+  }
+
+  function toggleChip(el) {
+    el.classList.toggle('selected');
+  }
+</script>
+</body>
+</html>
